@@ -9,7 +9,8 @@ static VERSION: &'static str = "0.1.0";
 static AUTHOR: &'static str = "Valerio Casalino <casalinovalerio.cv@gmail.com>";
 static DESCRIPTION: &'static str = "CLI Rust wrapper for tinyurl's API";
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), reqwest::Error> {
     // https://docs.rs/clap/2.33.0/clap/
     let matches = App::new(APP_NAME)
         .version(VERSION)
@@ -38,19 +39,10 @@ fn main() {
 
     let to_shorten = matches.value_of("input").unwrap();
     let url = format!("https://tinyurl.com/api-create.php?url={}", to_shorten);
+    let res = reqwest::get(url.as_str()).await?.text().await?;
 
-    match reqwest::get(url.as_str()) {
-        Ok(mut response) => {
-            // Check if 200OK
-            if response.status() == reqwest::StatusCode::Ok {
-                match response.text() {
-                    Ok(text) => println!("{}", text),
-                    Err(_) => eprintln!("Cannot read response text"),
-                }
-            } else {
-                eprintln!("Response wasn't 200OK");
-            }
-        },
-        Err(_) => eprintln!("Could not make request"),
-    }
+    println!("{}", res);
+
+
+    Ok(())
 }
