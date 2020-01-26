@@ -32,7 +32,7 @@ fn main() {
         .get_matches();
 
     match matches.occurrences_of("input") {
-        1 => println!("Shortening {}...", matches.value_of("input").unwrap()),
+        1 => println!("\n"),
         _ => {eprintln!("You need just 1 link..."); exit(1); },
     }
 
