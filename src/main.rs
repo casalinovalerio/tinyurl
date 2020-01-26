@@ -4,8 +4,8 @@ extern crate clap;
 use clap::{Arg, App};
 use std::process::exit;
 
-static APP_NAME: &'static str = "TinyUrl url shortener CLI";
-static VERSION: &'static str = "0.1.0";
+static APP_NAME: &'static str = "TinyUrl 🔗 shortener CLI";
+static VERSION: &'static str = "1.1";
 static AUTHOR: &'static str = "Valerio Casalino <casalinovalerio.cv@gmail.com>";
 static DESCRIPTION: &'static str = "CLI Rust wrapper for tinyurl's API";
 
@@ -18,9 +18,9 @@ async fn main() -> Result<(), reqwest::Error> {
         .about(DESCRIPTION)
         .arg(
             Arg::with_name("input")
-                .help("url 🔗 to shorten 😎")
+                .help("url 🔗 to shorten ✂")
                 .required(true)
-                .multiple(true))
+                .multiple(false))
         .arg(
             Arg::with_name("custom")
                 .short("c")
@@ -28,14 +28,9 @@ async fn main() -> Result<(), reqwest::Error> {
                 .multiple(false)
                 .required(false)
                 .takes_value(true)
-                .help("For now it doesn't work 😪")
+                .help("Custom alias for your link 😎")
         )
         .get_matches();
-
-    match matches.occurrences_of("input") {
-        1 => println!("\n"),
-        _ => {eprintln!("You need just 1 link..."); exit(1); },
-    }
 
     let to_shorten = matches.value_of("input").unwrap();
     let url = format!("https://tinyurl.com/api-create.php?url={}", to_shorten);
