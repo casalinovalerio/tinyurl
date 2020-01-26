@@ -1,0 +1,9 @@
+[package]
+name = "tinyurl"
+version = "0.1.0"
+authors = ["Valerio Casalino <casalinovalerio.cv@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+reqwest = "0.8.3"
+clap = "2.33"
