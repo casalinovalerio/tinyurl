@@ -1,32 +1,43 @@
-extern crate reqwest;
-extern crate clap;
+use async_std::io;
+use async_std::net::TcpStream;
+use async_std::prelude::*;
+use async_std::task;
+use async_tls::TlsConnector;
+use std::net::ToSocketAddrs;
+use structopt::StructOpt;
 
-use clap::{Arg, App};
+static DOMAIN: &'static str = "tinyurl.com";
+static ENDPOINT: &'static str = "/api-create.php";
 
-static APP_NAME: &'static str = "TinyUrl 🔗 shortener CLI";
-static VERSION: &'static str = "1.1";
-static AUTHOR: &'static str = "Valerio Casalino <casalinovalerio.cv@gmail.com>";
-static DESCRIPTION: &'static str = "CLI Rust wrapper for tinyurl's API";
-static ENDPOINT: &'static str = "https://tinyurl.com/api-create.php";
+#[derive(StructOpt)]
+struct Options {
+    url: String,
+}
 
-#[tokio::main]
-async fn main() -> Result<(), reqwest::Error> {
-    // https://docs.rs/clap/2.33.0/clap/
-    let matches = App::new(APP_NAME)
-        .version(VERSION)
-        .author(AUTHOR)
-        .about(DESCRIPTION)
-        .arg(
-            Arg::with_name("input")
-                .help("url 🔗 to shorten ✂")
-                .required(true)
-                .multiple(false))
-        .get_matches();
+fn main() -> io::Result<()> {
+    let options = Options::from_args();
 
-    let to_shorten = matches.value_of("input").unwrap();
-    let url = format!("{}?url={}", ENDPOINT, to_shorten);
-    let res = reqwest::get(url.as_str()).await?.text().await?;
+    // Check if the provided host exists
+    let addr = (DOMAIN, 443 as u16)
+        .to_socket_addrs()?
+        .next()
+        .ok_or_else(|| io::Error::from(io::ErrorKind::NotFound))?;
 
-    println!("{}", res);
-    Ok(())
+    let request = format!("GET {}?url={} HTTP/1.0\r\nHost: {}\r\n\r\n", 
+                          ENDPOINT, 
+                          options.url.as_str(), 
+                          DOMAIN);
+
+    task::block_on(async move {
+        let connector = TlsConnector::default();
+        let tcp_stream = TcpStream::connect(&addr).await?;
+        let mut tls_stream = connector
+            .connect(format!("{}",DOMAIN), tcp_stream)
+            .await?;
+        let mut stdout = io::stdout();
+
+        tls_stream.write_all(request.as_bytes()).await?;
+        io::copy(&mut tls_stream, &mut stdout).await?;
+        Ok(())
+    })
 }
